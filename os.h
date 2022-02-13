@@ -66,7 +66,7 @@ internal umm OS_file_get_size(OSFile file);
 internal u32 OS_unix_systime(void);
 internal u64 OS_systime(void);
 
-internal bool OS_path_exists(Str8 *path)
+internal bool OS_path_exists(Str8 *path);
 
 // End fdecl
 #endif //OS_H_INCLUDED

@@ -162,7 +162,7 @@ OS_path_exists(Str8 *path)
 	if (is_os_error(ret))
 		goto cleanup;
 
-	result = win32_path_exists(api_path);
+	result = win32_path_exists(&api_path);
 
 cleanup:
 	release_scratch(scratch);
