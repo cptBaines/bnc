@@ -36,7 +36,7 @@ OS_assert(i8 *expr, i8* file, u32 line)
 	Arena *scratch = get_scratch(0);
 	Str8 *msg = str_alloc(scratch, len);
 	memset(msg->str, 0, len);
-	
+
 	str_append(msg, &expr_str);
 	str_append8(msg, " [");
 	str_append(msg, &file_str);
@@ -77,8 +77,8 @@ OS_assert(i8 *expr, i8* file, u32 line)
 internal OSReturn
 OS_get_command_line(Arena *arena)
 {
-	OSReturn res = {0};	
-	// TODO(bjorn): Handle errors if any 
+	OSReturn res = {0};
+	// TODO(bjorn): Handle errors if any
 	Str8 *cmd8 = win32_get_command_line(arena);
 	res.handle = cmd8;
 	return res;
@@ -111,7 +111,7 @@ OS_file_get_size(OSFile file)
 	return (u64)size.QuadPart;
 }
 
-internal umm 
+internal umm
 OS_read_file(OSFile file, u8 *buf, umm size)
 {
 	DWORD bytes_read;
@@ -122,7 +122,7 @@ OS_read_file(OSFile file, u8 *buf, umm size)
 	return (u32)bytes_read;
 }
 
-internal umm 
+internal umm
 OS_write_file(OSFile file, u8* data, umm size)
 {
 	DWORD bytes_written;
@@ -142,14 +142,34 @@ OS__expand_path(Arena *mem, Str16 *api_path, Str8 *path)
 	Str8 bslash = str_lit("\\");
 
 	Str8 *app_path = str_dup(mem, path);
-	str_replace(app_path, &slash, &bslash, 0); 
-	
+	str_replace(app_path, &slash, &bslash, 0);
+
 	u32 ec = win32_path_expand(mem, api_path, app_path);
 	if (ec != ERROR_SUCCESS)
 		ret.error = mk_os_error(OSError_InvalidPath, ec);
 
 	return ret;
 }
+
+internal bool
+OS_path_exists(Str8 *path)
+{
+	bool result = false;
+
+	Arena *scratch = get_scratch(0);
+	Str16 api_path = {0};
+	OSReturn ret = OS__expand_path(scratch, &api_path, path);
+	if (is_os_error(ret))
+		goto cleanup;
+
+	result = win32_path_exists(api_path);
+
+cleanup:
+	release_scratch(scratch);
+
+	return result;
+}
+
 
 internal OSFile
 OS_open_file(Str8 *path, i8 *mode)
@@ -167,7 +187,7 @@ OS_open_file(Str8 *path, i8 *mode)
 
 	str16_zero_terminate(&api_path);
 	file.handle = win32_open_file(&api_path, file_mode, &error);
-	if (error != NO_ERROR) 
+	if (error != NO_ERROR)
 		file.error = mk_os_error(OSError_File, error);
 
 cleanup:
@@ -192,7 +212,7 @@ OS_systime(void)
 	GetSystemTimeAsFileTime(&ft);
 	result = ft.dwHighDateTime;
 	result = (result << 32) | ft.dwLowDateTime;
-	return result; 
+	return result;
 }
 
 internal u32
@@ -209,17 +229,17 @@ OS_unix_systime(void)
 }
 
 /* Copyright 2019 Björn Nilsson <public@bnicon.se>
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
  * the Software without restriction, including without limitation the rights to
  * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
  * of the Software, and to permit persons to whom the Software is furnished to do
  * so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE

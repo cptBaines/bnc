@@ -39,15 +39,15 @@ win32_get_command_line(Arena *arena)
 OSNamespace_Type
 bni_win32__get_path_namespce(Str8 *path)
 {
-	OSNamespace_Type res = OSNamespaceType_NONE;	
+	OSNamespace_Type res = OSNamespaceType_NONE;
 	i8 *p = path->str;
 
 	if ((p[0] == '\\') && (p[1] == '\\')){
-		if ((p[2] == '?') && (p[3] == '\\')){ 
+		if ((p[2] == '?') && (p[3] == '\\')){
 			res = OSNamespaceType_File;
 			p += 4;
 		}
-		else if ((p[2] == '.') && (p[3] == '\\')){ 
+		else if ((p[2] == '.') && (p[3] == '\\')){
 			res = OSNamespaceType_Device;
 			p += 4;
 		}
@@ -61,7 +61,7 @@ bni_win32__get_path_namespce(Str8 *path)
 			 ) && (p[1] == ':')){
 		res = OSNamespaceType_DiskDesignator;
 		p += 2;
-	} 
+	}
 	else if ( p[0] == '.'){
 		if ((p[1] == '\\') || ((p[1] == '.') && (p[2] == '\\'))){
 			res = OSNamespaceType_Relative;
@@ -86,11 +86,11 @@ win32_path_expand(Arena *mem, Str16 *os_path, Str8 *app_path)
 	// NOTE(bjorn): Intentional falltrhoug to advance pointer
 	// past the namespace part of the path
 	switch(ns) {
-	case OSNamespaceType_Device: 
-	case OSNamespaceType_File: 
+	case OSNamespaceType_Device:
+	case OSNamespaceType_File:
 		p += 2;
-	case OSNamespaceType_DiskDesignator: 
-	case OSNamespaceType_UNC: 
+	case OSNamespaceType_DiskDesignator:
+	case OSNamespaceType_UNC:
 		p += 2;
 	default:
 		;
@@ -126,7 +126,7 @@ win32_path_expand(Arena *mem, Str16 *os_path, Str8 *app_path)
 		Str16 working_dir = {0};
 		PlatformError pe = win32_get_current_directory(mem, &working_dir);
 		assert(pe == NO_ERROR);
-		prefix_dir = working_dir; 
+		prefix_dir = working_dir;
 		while(p[0] == '.'){
 			if  (p[1] == '\\') {
 				p += 2;
@@ -143,7 +143,7 @@ win32_path_expand(Arena *mem, Str16 *os_path, Str8 *app_path)
 		// constructs
 		while (p > app_path->str && *(p-1) == '.')
 			--p;
-	}	
+	}
 
 	Str16 file_ns = str16_lit(L"\\\\?\\");
 	u32 app_len = 0;
@@ -165,7 +165,7 @@ win32_path_expand(Arena *mem, Str16 *os_path, Str8 *app_path)
 
 		str16_append(api_path, &file_ns);
 		if(ns == OSNamespaceType_DiskDesignator || ns == OSNamespaceType_UNC) {
-			win32__str16_append_8(api_path, p - 2, 2); 
+			win32__str16_append_8(api_path, p - 2, 2);
 		}
 		else if (ns == OSNamespaceType_NONE || ns == OSNamespaceType_Relative)
 			str16_append(api_path, &prefix_dir);
@@ -180,7 +180,7 @@ win32_path_expand(Arena *mem, Str16 *os_path, Str8 *app_path)
 	else if (ns == OSNamespaceType_File || ns == OSNamespaceType_Device){
 		// NOTE(bjorn): File and device are passed through unchanged lenght
 		// wise so lenght of file_ns should compensate for any advancement
-		// of p for these kinds up to this point. 
+		// of p for these kinds up to this point.
 		win32__str16_append_8(api_path, app_path->str, app_path->len);
 	}
 
@@ -197,7 +197,7 @@ win32_get_current_directory(Arena *mem, Str16 *working_dir)
 
 	working_dir->len = GetCurrentDirectoryW(working_dir->cap, (LPWSTR)working_dir->str);
 	if (working_dir->len == 0)
-	  	return GetLastError(); 	
+	  	return GetLastError();
 
 	assert(working_dir->cap == working_dir->len + 1);
 
@@ -217,7 +217,7 @@ win32_get_file_attributes(Str16 *path, u32 *file_attr)
 PlatformError
 win32_create_directory(Str16 *path)
 {
-	// NOTE(bjorn): Maybe handle security attributes in the future	
+	// NOTE(bjorn): Maybe handle security attributes in the future
 	if (CreateDirectoryW((LPCWSTR)path->str, NULL) == false) {
 		return GetLastError();
 	}
@@ -265,18 +265,29 @@ win32_close_handle(HANDLE handle)
 	assert(result);
 }
 
-/* Copyright 2019 Björn Nilsson <public@bnicon.se> 
- *  
+internal bool
+win32_path_exists(Str16 *path)
+{
+
+	u32 attrs = GetFileAttributesW(path->str);
+	if (attrs == INVALID_FILE_ATTRIBUTES)
+		return false;
+
+	return true;
+}
+
+/* Copyright 2019 Björn Nilsson <public@bnicon.se>
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
  * the Software without restriction, including without limitation the rights to
  * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
  * of the Software, and to permit persons to whom the Software is furnished to do
  * so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
